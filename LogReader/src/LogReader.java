@@ -32,12 +32,14 @@ public class LogReader {
         Files.lines(Paths.get(fileName))
                 .filter(line -> line.contains("pentaho.report.processing.query"))
                 .map(fun -> {
-                    return "start time[" + LogReader.convertTimeToDate(Double.valueOf(fun.substring(6, finalReadLine.indexOf("]")))) + "]" +
-                            " execution time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(finalReadLine.indexOf("time[") + 5)
+                    return "Start time[" + LogReader.convertTimeToDate(Double.valueOf(fun.substring(6, finalReadLine.indexOf("]")))) + "]" +
+                            " [query=" + fun.substring(fun.indexOf("[query=") + 7) +"]"+
+                            " Execution time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(finalReadLine.indexOf("time[") + 5)
                             .substring(0, fun.substring(finalReadLine.indexOf("time[") + 5).indexOf("]")))) + "]" +
-                            fun.substring(fun.indexOf(" count[") + 0).replace("message", "");
+                            fun.substring(fun.indexOf(" count["), fun.indexOf("count[") + 9);
                 })
                 .sorted((o1, o2) -> {
+                    System.out.println("===="+o1);
                     if (o1.substring(o1.indexOf("[query=") + 8).compareTo(o2.substring(o2.indexOf("[query=") + 8)) == 0) {
                         return o1.substring(o1.indexOf("execution time[") + 15).compareTo(o2.substring(o2.indexOf("execution time[") + 15));
                     }
@@ -50,12 +52,17 @@ public class LogReader {
         Files.lines(Paths.get(fileName))
                 .filter(line -> line.contains("Summary.pentaho.report.processing.layout"))
                 .map(fun -> {
-                    return "start time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(6, finalReadLine.indexOf("]")))) + "]" +
-                            " execution time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(finalReadLine.indexOf("time[") + 5)
-                            .substring(0, fun.substring(finalReadLine.indexOf("time[") + 5).indexOf("]")))) + "]" + "[" +
-                            fun.substring(fun.indexOf("process.") + 8);
+                    String temp = "Start time[" + LogReader.convertTimeToDate(Double.valueOf(fun.substring(6, fun.indexOf("]")))) + "]" +
+                            " " +
+                            " " + "[" + fun.substring(fun.indexOf("tag[Summary.pentaho.report.processing.layout.process.") + 53);
+                    return temp.substring(0, temp.indexOf("count[")) + " " +
+                            "Execution time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(finalReadLine.indexOf("time[") + 5)
+                            .substring(0, fun.substring(finalReadLine.indexOf("time[") + 5).indexOf("]")))) + "]" +
+                            fun.substring(fun.indexOf(" count["), fun.indexOf("count[") + 12);
                 })
+
                 .sorted((o1, o2) -> {
+                    //System.out.println("==========="+o1);
                     if (o1.substring(o1.indexOf("][") + 2).compareTo(o2.substring(o2.indexOf("][") + 2)) == 0) {
                         return o1.substring(o1.indexOf("execution time[") + 15).compareTo(o2.substring(o2.indexOf("execution time[") + 15));
                     }
@@ -69,11 +76,15 @@ public class LogReader {
         Files.lines(Paths.get(fileName))
                 .filter(line -> line.contains("[pentaho.report.processing.layout"))
                 .map(fun -> {
-                    return "start time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(6, finalReadLine.indexOf("]")))) + "]" +
-                            " execution time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(finalReadLine.indexOf("time[") + 5)
-                            .substring(0, fun.substring(finalReadLine.indexOf("time[") + 5).indexOf("]")))) + "]" + "[" +
-                            fun.substring(fun.indexOf("layout.") + 6);
+                    String temp = "start time[" + LogReader.convertTimeToDate(Double.valueOf(fun.substring(6, fun.indexOf("]")))) + "]" +
+                            " " + "[" + fun.substring(fun.indexOf("tag[pentaho.report.processing.layout.") + 37);
+                    return temp.substring(0, temp.indexOf("count[")) + " " +
+                            "Execution time[" + LogReader.convertTimeToSec(Double.valueOf(fun.substring(finalReadLine.indexOf("time[") + 5)
+                            .substring(0, fun.substring(finalReadLine.indexOf("time[") + 5).indexOf("]")))) + "]" +
+                            fun.substring(fun.indexOf(" count["), fun.indexOf("count[") + 5);
                 })
+
+
                 .sorted((o1, o2) -> {
                     if (o1.substring(o1.indexOf("][.") + 3).compareTo(o2.substring(o2.indexOf("][.") + 3)) == 0) {
                         return o1.substring(o1.indexOf("execution time[") + 15).compareTo(o2.substring(o2.indexOf("execution time[") + 15));
@@ -88,7 +99,6 @@ public class LogReader {
 
             if (readLine.contains("[pentaho.report.processing.query]")) {
                 queryTime = queryTime + Long.parseLong(numpart);
-
             }
             if (readLine.contains("[pentaho.report.processing.prepare.paginate]")) {
                 paginateTime = paginateTime + Long.parseLong(numpart);
@@ -121,19 +131,17 @@ public class LogReader {
     }
 
     public static double convertTimeToSec(double test) {
-        //return (int)(test*1000)%1000;
-       // return (double) (test % 1000000l);
         long millis = TimeUnit.MILLISECONDS.convert((long) test, TimeUnit.NANOSECONDS);
         return millis;
     }
 
-    public static Date convertTimeToDate(Double timeInNs) {
-        String target = "1904/01/01 12:00 AM";  // Your given date string
-        long nanoseconds = 13551723208300l;   // nanoseconds since target time that you want to convert to java.util.Date
+    public static Date convertTimeToDate(double timeInNs) {
+        String target = "1904/01/01 12:00 AM";
+        long nanoseconds = (long) timeInNs;
 
         long millis = TimeUnit.MILLISECONDS.convert(nanoseconds, TimeUnit.NANOSECONDS);
 
-        DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd hh:mm aaa");
+        DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd hh:mm");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date = null;
         try {
@@ -142,9 +150,17 @@ public class LogReader {
             e.printStackTrace();
         }
 
+
         long newTimeInmillis = date.getTime() + millis;
 
-        Date date2 = new Date(newTimeInmillis);
+       Date date2 = new Date(newTimeInmillis);
+//        //YYYYMMDDhhmmss
+//        String t1 = "13597253571400";
+//        Instant a = Instant.parse(LocalDateTime.parse(t1, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+//                .format(DateTimeFormatter.ISO_DATE_TIME) + "Z");
+//        System.out.println("-------"+a);
+
+// or                      .toString + "Z")
         return date2;
     }
 

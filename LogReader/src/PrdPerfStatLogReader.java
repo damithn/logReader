@@ -27,12 +27,9 @@ public class PrdPerfStatLogReader {
         while (readLine != null) {
 
             String substring = readLine.substring(readLine.indexOf("time[") + 5);
-          // System.out.println("substring======================"+substring);
             String numpart = substring.substring(0, substring.indexOf("]"));
-            //System.out.println("================="+ numpart);
 
             String substring1 = readLine.substring(readLine.indexOf("start[") + 6);
-           // System.out.println("substring1======================" + substring1);
             String numpart1 = substring1.substring(0, substring1.indexOf("]"));
 
             String substring2 = readLine.substring(readLine.indexOf("count[") + 0);
